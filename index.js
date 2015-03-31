@@ -53,7 +53,8 @@ module.exports = function(options) {
         'background': '#100E16',
         'font-family': 'Verdana, Geneva, sans-serif',
         'font-size': '14px',
-        'display': 'inline-block'
+        'display': 'inline-block',
+        'word-wrap': 'break-word'
       },
 
       '.tap-test.pass': {
