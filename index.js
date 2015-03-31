@@ -32,6 +32,8 @@ var COL_BORDER_FAIL = '#EC92AD';
 var originalLog;
 var el;
 var applySelector;
+var onFinishedTest = function() {};
+var onFinished = function() {};
 var c = {
   log: function() {
     originalLog.apply(console, arguments);
@@ -109,9 +111,6 @@ module.exports = function(options) {
   // if theres then use it
   applySelector = applySelectorAndCss(o.css);
 
-  originalLog = console.log;
-  console.log = newLog;
-
   if(!o.el) {
     el = getEL(CLASS_NAMES.TAP_MAIN_PASS);
     document.body.appendChild(el);
@@ -119,15 +118,26 @@ module.exports = function(options) {
     el = o.el;
     applySelector(el, CLASS_NAMES.TAP_MAIN_PASS);
   }
+
+  onFinished = o.onFinished || onFinished;
+  onFinishedTest = o.onFinishedTest || onFinishedTest;
+
+  originalLog = console.log;
+  console.log = newLog;
+};
+
+module.exports.log = function() {
+
+  c.log.apply(c, arguments);
 };
 
 function newLog() {
 
-  // parse output
-  parseLogs.call(undefined, arguments[0]);
-
   // export to console anyway
   c.log.apply(c, arguments);
+
+  // parse output
+  parseLogs.call(undefined, arguments[0]);
 }
 
 function parseLogs(line) {
@@ -179,6 +189,13 @@ function parseEnd(line) {
   var regResult;
   var cEl;
 
+  // need to call this the first time we start parsing end
+  if(!this.isNotFirstParse) {
+    this.isNotFirstParse = true;
+
+    onFinishedTest();
+  }
+
   if(this.numPassed === undefined) {
 
     regResult = REG_END_COUNT_TESTS_PASS.exec(line);
@@ -205,6 +222,8 @@ function parseEnd(line) {
     cEl.innerHTML = 'Passed: ' + this.numPassed + ' / ' + ( this.numPassed + this.numFail );
     el.appendChild(cEl);
 
+    onFinished();
+
     // reset numPassed so this test can be run again
     this.numPassed = undefined;
   }
@@ -215,6 +234,10 @@ function getCurrentTest(line) {
   var regResult = REG_TEST_START.exec(line);
 
   if(regResult) {
+
+    if(this.cTest) {
+      onFinishedTest();
+    }
 
     this.cTest = getTest(regResult[1]);
   } else {

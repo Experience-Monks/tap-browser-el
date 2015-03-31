@@ -1,7 +1,15 @@
 var test = require('tape');
 var tapBrowserEl = require('./../..');
 
-tapBrowserEl();
+tapBrowserEl( {
+	onFinishedTest: function() {
+		tapBrowserEl.log('--- finished test ---');
+	},
+
+	onFinished: function() {
+		tapBrowserEl.log('--- finished fully ---');
+	}
+});
 
 runTest();
 

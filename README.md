@@ -35,9 +35,21 @@ require('tap-browser-el')( {
         '.tap-test.fail': {
             background: '#F00'
         }
-    }
+    },
+
+    // this is a callback you can pass for when one test is finished
+    // 
+    // note you shouldn't console.log here you'll cause an infinite loop
+    onFinishedTest: function() {},
+
+    // this is a callback you can pass for when everything is finished
+    // 
+    // note you shouldn't console.log here you'll cause an infinite loop
+    onFinished: function() {}
 });
 ```
+
+If you want to see more examples check the [test folder](./test/).
 
 ## License
 
