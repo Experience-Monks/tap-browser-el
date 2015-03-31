@@ -53,8 +53,7 @@ module.exports = function(options) {
         'background': '#100E16',
         'font-family': 'Verdana, Geneva, sans-serif',
         'font-size': '14px',
-        'word-wrap': 'break-word',
-        'max-width': '400px'
+        'word-wrap': 'break-word'
       },
 
       '.tap-test.pass': {
@@ -194,7 +193,7 @@ function parseEnd(line) {
   if(!this.isNotFirstParse) {
     this.isNotFirstParse = true;
 
-    onFinishedTest();
+    process.nextTick(onFinishedTest);
   }
 
   if(this.numPassed === undefined) {
@@ -223,7 +222,7 @@ function parseEnd(line) {
     cEl.innerHTML = 'Passed: ' + this.numPassed + ' / ' + ( this.numPassed + this.numFail );
     el.appendChild(cEl);
 
-    onFinished();
+    process.nextTick(onFinished);
 
     // reset numPassed so this test can be run again
     this.numPassed = undefined;
@@ -237,7 +236,7 @@ function getCurrentTest(line) {
   if(regResult) {
 
     if(this.cTest) {
-      onFinishedTest();
+      process.nextTick(onFinishedTest);
     }
 
     this.cTest = getTest(regResult[1]);
