@@ -10,6 +10,7 @@ var REG_END_START = /^\d+..\d+/;
 var REG_END_COUNT_TESTS = /^# tests (\d+)/;
 var REG_END_COUNT_TESTS_PASS = /^# pass  (\d+)/;
 var REG_END_COUNT_TESTS_FAIL = /^# fail  (\d+)/;
+var REG_END_FINAL_OK = /^# ok/;
 
 var CLASS_NAMES = {
 
@@ -32,6 +33,7 @@ var COL_BORDER_FAIL = '#EC92AD';
 var originalLog;
 var el;
 var applySelector;
+var outPutToConsole = true;
 var onFinishedTestPart = function() {};
 var onFinishedTest = function() {};
 var onFinished = function() {};
@@ -44,6 +46,8 @@ var c = {
 module.exports = function(options) {
 
   var o = options || {};
+
+  outPutToConsole = o.outPutToConsole === undefined ? true : o.outPutToConsole;
 
   // if no css is defined use default
   if(o.css === undefined) {
@@ -135,18 +139,24 @@ module.exports.log = function() {
 
 function newLog() {
 
-  // export to console anyway
-  c.log.apply(c, arguments);
+  var wasTap = parseLogs.call(undefined, arguments[0]);
 
-  // parse output
-  parseLogs.call(undefined, arguments[0]);
+  // always export non tap console
+  if(!wasTap) {
+    c.log.apply(c, arguments);
+  // if we should output tap then do it
+  } else if(outPutToConsole) {
+    c.log.apply(c, arguments);
+  } 
 }
 
 function parseLogs(line) {
 
+  var wasTap = false;
   var nEl;
   var regResult;
   var test;
+  
 
   // we haven't received start so we'll continue looking for it
   if(!this.receivedStart) {
@@ -154,7 +164,7 @@ function parseLogs(line) {
     regResult = REG_CHECK_V.exec(line);
 
     if(regResult) {
-
+      wasTap = true;
       this.receivedStart = true;
 
       if(parseFloat(regResult[1]) != 13 ) {
@@ -164,22 +174,34 @@ function parseLogs(line) {
   // we've recived start so just start parsing other stuff
   } else {
 
-    this.startedEnd = this.startedEnd || testStartedEnd(line);
+    // if this was the end call
+    wasTap = testStartedEnd(line);
+    this.startedEnd = this.startedEnd || wasTap;
 
     // we haven't started the end sequence output
     if(!this.startedEnd) {
 
       test = getCurrentTest(line);
 
-      if(test) {
-        test.parse(line);
+      // if this current test is not the new text then
+      // there was new tap output
+      if(test !== this.test) {
+
+        wasTap = true;
+        this.test = test;
+      }
+
+      if(this.test) {
+        wasTap = wasTap || this.test.parse(line);
       }
     // we have started the end sequence output
     } else {
 
-      parseEnd(line);
+      wasTap = wasTap || parseEnd(line);
     }
   }
+
+  return wasTap;
 }
 
 function testStartedEnd(line) {
@@ -188,6 +210,7 @@ function testStartedEnd(line) {
 }
 
 function parseEnd(line) {
+  var wasTap = false;
   var regResult;
   var cEl;
 
@@ -200,16 +223,28 @@ function parseEnd(line) {
 
   if(this.numPassed === undefined) {
 
-    regResult = REG_END_COUNT_TESTS_PASS.exec(line);
+    // check if this is just simply the count of tests if so just say it was tap out
+    regResult = REG_END_COUNT_TESTS.exec(line);
 
+    // it was just the number of tests
     if(regResult) {
-      this.numPassed = parseInt(regResult[ 1 ]);
+      wasTap = true;
+    // it was not the number of tests so test if it was the count passing
+    } else {
+
+      regResult = REG_END_COUNT_TESTS_PASS.exec(line);
+
+      if(regResult) {
+        wasTap = true;
+        this.numPassed = parseInt(regResult[ 1 ]);
+      }
     }
   } else {
 
     regResult = REG_END_COUNT_TESTS_FAIL.exec(line);
 
     if(regResult) {
+      wasTap = true;
       this.numFail = parseInt(regResult[ 1 ]);
     }
 
@@ -221,14 +256,26 @@ function parseEnd(line) {
       cEl = getEL(CLASS_NAMES.TAP_RESULT_FAIL);
     }
     
+    this.numPassed = this.numPassed || 0;
+    this.numFail = this.numFail || 0;
+
     cEl.innerHTML = 'Passed: ' + this.numPassed + ' / ' + ( this.numPassed + this.numFail );
     el.appendChild(cEl);
 
     process.nextTick(onFinished);
 
     // reset numPassed so this test can be run again
+    this.numFail = undefined;
     this.numPassed = undefined;
   }
+
+  // if we haven't found tap output just check for the final ok which is
+  // exported when all tests have passed
+  if(!wasTap) {
+    wasTap = REG_END_FINAL_OK.test(line);
+  }
+
+  return wasTap;
 }
 
 function getCurrentTest(line) {
@@ -242,10 +289,9 @@ function getCurrentTest(line) {
     }
 
     this.cTest = getTest(regResult[1]);
-  } else {
-
-    return this.cTest;
   }
+
+  return this.cTest;
 }
 
 function getTest(name) {
@@ -264,7 +310,7 @@ function getTest(name) {
   return {
 
     parse: function(line) {
-
+      var wasTap = false;
       var regResult;
       var hasFailEnded;
 
@@ -274,7 +320,7 @@ function getTest(name) {
 
         // this test passed
         if(regResult) {
-
+          wasTap = true;
           cEl = getEL(CLASS_NAMES.TAP_TESTPART_PASS);
           cEl.innerHTML = regResult[ 1 ] + '. ' + regResult[ 2 ];
           testEl.appendChild(cEl);
@@ -285,6 +331,7 @@ function getTest(name) {
           regResult = REG_FAIL.exec(line);
 
           if(regResult) {
+            wasTap = true;
 
             // make the main test el fail
             if(!hasFailed) {
@@ -305,27 +352,30 @@ function getTest(name) {
       } else {
 
         if(!hasFailReasonStarted) {
-          hasFailReasonStarted = REG_FAIL_REASON_START.test(line);
+          hasFailReasonStarted = wasTap = REG_FAIL_REASON_START.test(line);
         } else{
 
-          hasFailEnded = REG_FAIL_REASON_END.test(line);
+          hasFailEnded = wasTap = REG_FAIL_REASON_END.test(line);
 
           // if failing hasn't ended yet them we'll continue to add fail reason lines
           if(!hasFailEnded) {
 
+            wasTap = true;
             cEl = getEL(CLASS_NAMES.TAP_FAIL_REASON);
             cEl.innerHTML = line;
             testEl.appendChild(cEl);
           // if the failing has ended then we'll let tap continue as ussual
           } else {
 
+            wasTap = true;
             onFinishedTestPart();
-            
             hasFailReasonStarted = false;
             isFailing = false;
           }
         }
       }
+
+      return wasTap;
     }
   };
 }

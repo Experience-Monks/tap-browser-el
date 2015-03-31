@@ -19,6 +19,10 @@ require('tap-browser-el')( {
     // by default a <div> will be created on body
     el: someDomElementWhichTapContentWillBeWrittenTo,
 
+    // if you want tap output to console pass in true
+    // if you don't then pass in false
+    outPutToConsole: true,
+
     // you can pass in styles to override default styles
     // if css is not passed default styles will be applied
     // 
