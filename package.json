@@ -1,0 +1,31 @@
+{
+  "name": "tap-browser-el",
+  "version": "1.0.0",
+  "description": "A tap/tape reporter which adds a dom element to the dom and can be styled easily",
+  "main": "index.js",
+  "license": "MIT",
+  "author": {
+    "name": "Mikko Haapoja",
+    "email": "me@mikkoh.com",
+    "url": "https://github.com/mikkoh"
+  },
+  "dependencies": {
+    "apply-selector-and-css": "^1.0.3"
+  },
+  "devDependencies": {
+    "tape": "^3.5.0"
+  },
+  "scripts": {
+  },
+  "keywords": [
+    "tape,tap,reporter,browser,element"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/Jam3/tap-browser-el.git"
+  },
+  "homepage": "https://github.com/Jam3/tap-browser-el",
+  "bugs": {
+    "url": "https://github.com/Jam3/tap-browser-el/issues"
+  }
+}

@@ -1,0 +1,24 @@
+.tap-test.pass {
+
+	background: #d8ffd4;
+}
+
+.tap-test.fail {
+
+	background: #ffd4d4;
+}
+
+.pass {
+
+	border: 5px solid #00FF00;
+}
+
+.fail {
+
+	border: 5px solid #FF0000;
+}
+
+.tap-result {
+
+	background: #d4efff;
+}
