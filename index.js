@@ -32,6 +32,7 @@ var COL_BORDER_FAIL = '#EC92AD';
 var originalLog;
 var el;
 var applySelector;
+var onFinishedTestPart = function() {};
 var onFinishedTest = function() {};
 var onFinished = function() {};
 var c = {
@@ -121,6 +122,7 @@ module.exports = function(options) {
 
   onFinished = o.onFinished || onFinished;
   onFinishedTest = o.onFinishedTest || onFinishedTest;
+  onFinishedTestPart = o.onFinishedTestPart || onFinishedTestPart;
 
   originalLog = console.log;
   console.log = newLog;
@@ -276,6 +278,8 @@ function getTest(name) {
           cEl = getEL(CLASS_NAMES.TAP_TESTPART_PASS);
           cEl.innerHTML = regResult[ 1 ] + '. ' + regResult[ 2 ];
           testEl.appendChild(cEl);
+
+          onFinishedTestPart();
         } else {
 
           regResult = REG_FAIL.exec(line);
@@ -314,6 +318,9 @@ function getTest(name) {
             testEl.appendChild(cEl);
           // if the failing has ended then we'll let tap continue as ussual
           } else {
+
+            onFinishedTestPart();
+            
             hasFailReasonStarted = false;
             isFailing = false;
           }

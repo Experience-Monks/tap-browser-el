@@ -37,6 +37,10 @@ require('tap-browser-el')( {
         }
     },
 
+    // this is a callback you can pass for when one test is finished one part
+    // of the test
+    onFinishedTestPart: function() {}.
+
     // this is a callback you can pass for when one test is finished
     onFinishedTest: function() {},
 
